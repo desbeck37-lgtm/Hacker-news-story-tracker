@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hacker News front page, over time</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<main class="page">
+
+  <header class="masthead">
+    <h1>Hacker News front page, over time</h1>
+    <p class="lede">The front page only shows where a story is right now. This records every
+      story's rank, points and comments on each run, so you can see how it got there.</p>
+    {% if stats.latest_run %}
+    <p class="status">
+      Last collected {{ stats.latest_run|ago }}.
+      {{ stats.runs|count("run", "runs") }},
+      {{ stats.stories|count("story", "stories") }} and
+      {{ stats.snapshots|count("snapshot", "snapshots") }}
+      since {{ stats.first_run|day }}.
+    </p>
+    {% endif %}
+  </header>
+
+  {% if not stories %}
+  <section class="empty">
+    <h2>Nothing collected yet</h2>
+    <p>Run the collector in a terminal, then reload this page.</p>
+    <pre><code>python collector.py --every 10</code></pre>
+    <p>The first run fills the table. The charts become interesting after a few more.</p>
+  </section>
+  {% else %}
+
+  <div id="app">
+    <section class="block" aria-labelledby="ranks-title">
+      <div class="block-head">
+        <h2 id="ranks-title">Rank over the last</h2>
+        <div class="range" role="group" aria-label="Time range">
+          {% for hours, label in ranges.items() %}
+          <button type="button" data-hours="{{ hours }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="chart-box chart-box--ranks">
+        <canvas id="rank-chart" role="img" aria-label="Line chart of every tracked story's rank over time. The same figures are in the table below."></canvas>
+      </div>
+      <p class="hint">Each line is one story, with rank 1 at the top. Select a line, or a title in the table, to follow that story.</p>
+    </section>
+
+    <section class="block detail" id="detail" aria-labelledby="detail-title" hidden>
+      <div class="detail-text">
+        <h2 id="detail-title"></h2>
+        <p class="detail-meta" id="detail-meta"></p>
+        <p class="detail-links">
+          <a id="detail-link" href="#" rel="noopener">Read the story</a>
+          <a id="detail-discussion" href="#" rel="noopener">Open the discussion</a>
+        </p>
+        <dl class="facts">
+          <div><dt>Rank now</dt><dd id="fact-rank"></dd></div>
+          <div><dt>Best rank</dt><dd id="fact-best"></dd></div>
+          <div><dt>Points gained</dt><dd id="fact-gained"></dd></div>
+          <div><dt>Tracked for</dt><dd id="fact-tracked"></dd></div>
+        </dl>
+      </div>
+      <div class="chart-box chart-box--story">
+        <canvas id="story-chart" role="img" aria-label="Line chart of the selected story's points and comments over time."></canvas>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="table-title">
+      <h2 id="table-title">On the front page now</h2>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" class="num">Rank</th>
+              <th scope="col">Last hour</th>
+              <th scope="col">Story</th>
+              <th scope="col" class="num">Points</th>
+              <th scope="col" class="num optional">Gained</th>
+              <th scope="col" class="num">Comments</th>
+              <th scope="col" class="num optional">Best rank</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in stories %}
+            <tr data-story="{{ s.id }}">
+              <td class="num rank">{{ s.rank }}</td>
+              <td class="move">
+                {% if s.moved is none %}<span class="new">New</span>
+                {% elif s.moved > 0 %}<span class="rise" aria-label="Up {{ s.moved }}">&#9650; {{ s.moved }}</span>
+                {% elif s.moved < 0 %}<span class="fall" aria-label="Down {{ -s.moved }}">&#9660; {{ -s.moved }}</span>
+                {% else %}<span class="flat" aria-label="No change">&ndash;</span>{% endif %}
+              </td>
+              <td class="story">
+                <button type="button" class="pick" data-story="{{ s.id }}" aria-pressed="false">{{ s.title }}</button>
+                <span class="source">{{ s.domain }}{% if s.author %}, by {{ s.author }}{% endif %}</span>
+              </td>
+              <td class="num">{{ s.score }}</td>
+              <td class="num optional">{% if s.gained > 0 %}+{% endif %}{{ s.gained }}</td>
+              <td class="num">{{ s.comments }}</td>
+              <td class="num optional">{{ s.best_rank }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="hint">Last hour compares each story's rank with an hour ago. Gained is points since the tracker first saw it.</p>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  {% endif %}
+
+</main>
+</body>
+</html>
