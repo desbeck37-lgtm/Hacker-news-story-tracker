@@ -5,10 +5,7 @@ where every story *has been*: a collector saves each story's rank, points and
 comment count on a schedule, and a small web dashboard charts how stories climb
 and fall.
 
-<!-- After you have some data, take a screenshot of the dashboard, save it as
-     docs/screenshot.png, and uncomment the next line:
 ![The dashboard](docs/screenshot.png)
--->
 
 <!-- Once the repo is on GitHub, uncomment this and fill in your username and repo name:
 ![tests](https://github.com/YOUR-USERNAME/YOUR-REPO/actions/workflows/tests.yml/badge.svg)
